@@ -425,6 +425,23 @@ document.addEventListener('DOMContentLoaded', async function() {
       if(!sidingBox || !driveBox || !houseLabel || !driveLabel || !priceDiv) return false;
       if(section.dataset.rxWired === '1') return true;
 
+      // The sliders and checkboxes are framework-"controlled" (data-dc-tpl): a
+      // real drag/click gets reverted to the component's state, snapping the
+      // thumb back. Replace them with plain clones the framework doesn't manage.
+      function unmanageCtl(el){
+        if(!el || !el.hasAttribute('data-dc-tpl')) return el;
+        var f = document.createElement('input');
+        f.className = el.className; f.id = el.id; f.type = el.type;
+        if(el.type === 'range'){ f.min = el.min; f.max = el.max; f.step = el.step; f.value = el.value; }
+        else if(el.type === 'checkbox'){ f.checked = el.checked; }
+        el.parentNode.replaceChild(f, el);
+        return f;
+      }
+      house = unmanageCtl(house);
+      drive = unmanageCtl(drive);
+      sidingBox = unmanageCtl(sidingBox);
+      driveBox = unmanageCtl(driveBox);
+
       var priceWrap = priceDiv.parentNode;
       var fallback = section.querySelector('[data-rx-fallback]');
       if(!fallback && priceWrap){
