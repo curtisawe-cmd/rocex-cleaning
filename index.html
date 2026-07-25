@@ -581,7 +581,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           var body = ['Name: '+name,'Phone: '+phone,'Email: '+email,'Service: '+service,'','Details:',message||'(none provided)'].join('\n');
           form.style.display = 'none';
           done.style.display = 'flex';
-          window.location.href = 'mailto:rocexcleaning@gmail.com?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+          window.location.href = 'mailto:rocexcleaning@gmail.com?cc=curtisawe@gmail.com&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
         }, true);
         form.dataset.rxContactWired = '1';
       })();
