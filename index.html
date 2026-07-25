@@ -582,18 +582,24 @@ document.addEventListener('DOMContentLoaded', async function() {
           // Background send via FormSubmit (no account needed): emails the
           // request to RocEx, CCs Curtis, and auto-replies a thank-you to the
           // customer. Fires silently; the confirmation card is already shown.
-          fetch('https://formsubmit.co/ajax/rocexcleaning@gmail.com', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({
-              name: name, phone: phone, email: email, service: service, details: message || '(none provided)',
-              _subject: 'New quote request — ' + name,
-              _cc: 'curtisawe@gmail.com',
-              _template: 'table',
-              _captcha: 'false',
-              _autoresponse: 'Hi ' + name + ',\n\nThanks for contacting RocEx Cleaning — we\'ve received your request and will get back to you within one business day with a quote.\n\nIf you need us sooner, call 585-733-8540.\n\n— The RocEx Cleaning Team'
-            })
-          }).catch(function(){});
+          var payload = {
+            name: name, phone: phone, email: email, service: service, details: message || '(none provided)',
+            _subject: 'New quote request — ' + name,
+            _template: 'table', _captcha: 'false'
+          };
+          function rxSend(to, extra){
+            var b = {}, k; for(k in payload){ b[k] = payload[k]; }
+            if(extra){ for(k in extra){ b[k] = extra[k]; } }
+            return fetch('https://formsubmit.co/ajax/' + to, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+              body: JSON.stringify(b)
+            }).catch(function(){});
+          }
+          // Two independent sends (not a Cc). RocEx's copy carries the customer
+          // thank-you auto-reply; Curtis gets his own separate copy.
+          rxSend('rocexcleaning@gmail.com', { _autoresponse: 'Hi ' + name + ',\n\nThanks for contacting RocEx Cleaning — we\'ve received your request and will get back to you within one business day with a quote.\n\nIf you need us sooner, call 585-733-8540.\n\n— The RocEx Cleaning Team' });
+          rxSend('curtisawe@gmail.com');
         }, true);
         form.dataset.rxContactWired = '1';
       })();
