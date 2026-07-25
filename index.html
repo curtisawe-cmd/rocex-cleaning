@@ -515,6 +515,60 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
       })();
 
+      // Contact form: same controlled-input block as the address field (fields
+      // can't be typed) plus a dead submit. Make the text fields typeable and
+      // wire "Send request" to open a pre-filled email to the business.
+      (function setupContact(){
+        var contact = byId('contact');
+        var form = contact ? contact.querySelector('form') : null;
+        if(!form || form.dataset.rxContactWired === '1') return;
+        function unmanage(el){
+          if(!el || !el.hasAttribute('data-dc-tpl')) return el;
+          var tag = el.tagName.toLowerCase();
+          var fresh = document.createElement(tag);
+          fresh.className = el.className; fresh.id = el.id;
+          if(tag === 'input') fresh.type = el.type;
+          if(el.placeholder) fresh.placeholder = el.placeholder;
+          if(el.required) fresh.required = true;
+          fresh.value = el.value || '';
+          el.parentNode.replaceChild(fresh, el);
+          return fresh;
+        }
+        var nameEl = unmanage(byId('rx-name'));
+        var phoneEl = unmanage(byId('rx-phone'));
+        var emailEl = unmanage(byId('rx-email'));
+        var msgEl = unmanage(byId('rx-message'));
+        var svcEl = byId('rx-service'); // native <select> works as-is
+
+        // Pre-build a hidden confirmation card next to the form. On submit we
+        // only TOGGLE visibility — never structurally remove the form, which
+        // would crash the framework's reconciler and blank the section.
+        var done = document.createElement('div');
+        done.className = 'card elev-sm';
+        done.style.cssText = 'border-radius:0;padding:40px;align-items:flex-start;justify-content:center;gap:8px;display:none;';
+        done.innerHTML = '<div class="card-kicker">Request sent</div>'
+          + '<div class="card-title" style="font-size:22px;">Thanks — your email is ready to send.</div>'
+          + '<p class="card-body">Your email app should have opened with the details filled in — just hit send and we’ll reply within one business day. If nothing opened, email <strong>rocexcleaning@gmail.com</strong> or call <strong>585-733-8540</strong>.</p>';
+        form.insertAdjacentElement('afterend', done);
+
+        // Capture phase + stopImmediatePropagation so the framework's own
+        // (send-nothing) submit handler never runs — we own the submit.
+        form.addEventListener('submit', function(e){
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          var name=(nameEl&&nameEl.value||'').trim(), phone=(phoneEl&&phoneEl.value||'').trim(),
+              email=(emailEl&&emailEl.value||'').trim(), service=(svcEl&&svcEl.value||'').trim(),
+              message=(msgEl&&msgEl.value||'').trim();
+          if(!name || !phone || !email){ (!name?nameEl:!phone?phoneEl:emailEl).focus(); return; }
+          var subject = 'Quote request — ' + name;
+          var body = ['Name: '+name,'Phone: '+phone,'Email: '+email,'Service: '+service,'','Details:',message||'(none provided)'].join('\n');
+          form.style.display = 'none';
+          done.style.display = 'flex';
+          window.location.href = 'mailto:rocexcleaning@gmail.com?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+        }, true);
+        form.dataset.rxContactWired = '1';
+      })();
+
       section.dataset.rxWired = '1';
       recompute();
       return true;
