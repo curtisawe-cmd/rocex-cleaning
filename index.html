@@ -494,10 +494,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         iframe.src=mapUrl(DEFAULT_Q, true);
         container.innerHTML=''; container.style.padding='0'; container.appendChild(iframe);
         var addr = byId('rx-address');
+        // The framework marks this a "controlled" input (data-dc-tpl) and
+        // intercepts keystrokes, but the export stripped its update handler —
+        // so the field can never be typed into. Swap in a plain, un-managed
+        // input the framework ignores, preserving id/placeholder/value.
+        if(addr && addr.hasAttribute('data-dc-tpl')){
+          var fresh = document.createElement('input');
+          fresh.className = addr.className; fresh.id = addr.id; fresh.type = 'text';
+          fresh.placeholder = addr.placeholder; fresh.autocomplete = 'off';
+          fresh.value = addr.value || '';
+          addr.parentNode.replaceChild(fresh, addr);
+          addr = fresh;
+        }
         function upd(){ var v=(addr.value||'').trim(); iframe.src = v ? mapUrl(v,false) : mapUrl(DEFAULT_Q,true); }
         if(addr){
-          addr.addEventListener('change', upd);
-          addr.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); upd(); } });
+          var t;
+          addr.addEventListener('input', function(){ clearTimeout(t); t=setTimeout(upd, 1000); });
+          addr.addEventListener('change', function(){ clearTimeout(t); upd(); });
+          addr.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); clearTimeout(t); upd(); } });
         }
       })();
 
