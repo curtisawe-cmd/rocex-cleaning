@@ -397,6 +397,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     function money(n){ return n.toLocaleString('en-US'); }
 
     function wire(){
+      // Mobile: the hero's 2-col grid squeezes the RocEx logo to a sliver. The
+      // bundler discards static <head> CSS, so inject the responsive rule here
+      // (post-render) to stack the hero and show the logo full-size on phones.
+      if(!byId('rx-responsive-css') && document.querySelector('section[style*="1.1fr 1fr"]')){
+        var mc = document.createElement('style'); mc.id = 'rx-responsive-css';
+        mc.textContent = '@media (max-width:760px){section[style*="1.1fr 1fr"]{grid-template-columns:1fr !important;gap:16px !important;}section[style*="1.1fr 1fr"] figure{height:300px !important;order:-1 !important;margin-bottom:8px !important;}}';
+        document.head.appendChild(mc);
+      }
       var section = byId('estimate');
       var house = byId('rx-house'), drive = byId('rx-drive');
       if(!section || !house || !drive) return false;
