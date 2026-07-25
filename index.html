@@ -604,12 +604,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         if(!byId('rx-carousel-css')){
           var st = document.createElement('style'); st.id = 'rx-carousel-css';
           st.textContent =
-            '.rx-carousel-scene{position:relative;width:100%;height:440px;margin:10px 0 4px;perspective:1500px;overflow:hidden;}'
-          + '.rx-carousel-stage{position:absolute;left:50%;top:50%;width:260px;height:300px;margin:-150px 0 0 -130px;transform-style:preserve-3d;animation:rx-spin 26s linear infinite;}'
-          + '.rx-carousel-scene:hover .rx-carousel-stage{animation-play-state:paused;}'
-          + '.rx-carousel-card{position:absolute;left:0;top:0;width:260px;height:300px;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:var(--shadow-lg);overflow:hidden;cursor:default;border:1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);}'
+            '.rx-carousel-scene{position:relative;width:100%;height:440px;margin:10px 0 4px;perspective:1500px;overflow:hidden;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;}'
+          + '.rx-carousel-scene.rx-grabbing{cursor:grabbing;}'
+          + '.rx-carousel-stage{position:absolute;left:50%;top:50%;width:260px;height:300px;margin:-150px 0 0 -130px;transform-style:preserve-3d;will-change:transform;}'
+          + '.rx-carousel-card{position:absolute;left:0;top:0;width:260px;height:300px;backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:var(--shadow-lg);overflow:hidden;cursor:inherit;border:1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);}'
           + '.rx-carousel-card:hover{box-shadow:0 18px 44px color-mix(in srgb, var(--color-accent) 34%, transparent);}'
-          + '@keyframes rx-spin{from{transform:rotateY(0deg);}to{transform:rotateY(360deg);}}'
           + '@media (max-width:720px){.rx-carousel-scene{height:360px;perspective:1000px;}}';
           document.head.appendChild(st);
         }
@@ -634,6 +633,37 @@ document.addEventListener('DOMContentLoaded', async function() {
         grid.style.display = 'none';
         grid.parentNode.insertBefore(scene, grid.nextSibling);
         var seg = services.querySelector('.seg'); if(seg) seg.style.display = 'none';
+
+        // Auto-spin around the vertical axis, pause on hover, and click-drag
+        // left/right to manually rotate the ring to the card you want.
+        var angle = 0, hovering = false, dragging = false, lastX = 0;
+        var AUTO = 360 / 26000; // degrees per ms (~26s per revolution)
+        var last = performance.now();
+        (function frame(now){
+          now = now || performance.now();
+          var dt = Math.min(now - last, 60); last = now;
+          if(!dragging && !hovering) angle += AUTO * dt;
+          stage.style.transform = 'rotateY(' + angle + 'deg)';
+          requestAnimationFrame(frame);
+        })(last);
+        scene.addEventListener('mouseenter', function(){ hovering = true; });
+        scene.addEventListener('mouseleave', function(){ hovering = false; });
+        scene.addEventListener('pointerdown', function(e){
+          dragging = true; lastX = e.clientX; scene.classList.add('rx-grabbing');
+          if(scene.setPointerCapture){ try{ scene.setPointerCapture(e.pointerId); }catch(_){ } }
+          e.preventDefault();
+        });
+        scene.addEventListener('pointermove', function(e){
+          if(!dragging) return;
+          angle += (e.clientX - lastX) * 0.45; lastX = e.clientX;
+        });
+        function endDrag(e){
+          dragging = false; scene.classList.remove('rx-grabbing');
+          if(e && scene.releasePointerCapture){ try{ scene.releasePointerCapture(e.pointerId); }catch(_){ } }
+        }
+        scene.addEventListener('pointerup', endDrag);
+        scene.addEventListener('pointercancel', endDrag);
+
         services.dataset.rxCarousel = '1';
       })();
 
