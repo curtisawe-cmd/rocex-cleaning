@@ -564,8 +564,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         done.className = 'card elev-sm';
         done.style.cssText = 'border-radius:0;padding:40px;align-items:flex-start;justify-content:center;gap:8px;display:none;';
         done.innerHTML = '<div class="card-kicker">Request sent</div>'
-          + '<div class="card-title" style="font-size:22px;">Thanks — your email is ready to send.</div>'
-          + '<p class="card-body">Your email app should have opened with the details filled in — just hit send and we’ll reply within one business day. If nothing opened, email <strong>rocexcleaning@gmail.com</strong> or call <strong>585-733-8540</strong>.</p>';
+          + '<div class="card-title" style="font-size:22px;">Thanks — we’ve got your request.</div>'
+          + '<p class="card-body">We’ll reply within one business day with a quote, and a confirmation email is on its way to your inbox. Need us sooner? Call <strong>585-733-8540</strong>.</p>';
         form.insertAdjacentElement('afterend', done);
 
         // Capture phase + stopImmediatePropagation so the framework's own
@@ -577,11 +577,23 @@ document.addEventListener('DOMContentLoaded', async function() {
               email=(emailEl&&emailEl.value||'').trim(), service=(svcEl&&svcEl.value||'').trim(),
               message=(msgEl&&msgEl.value||'').trim();
           if(!name || !phone || !email){ (!name?nameEl:!phone?phoneEl:emailEl).focus(); return; }
-          var subject = 'Quote request — ' + name;
-          var body = ['Name: '+name,'Phone: '+phone,'Email: '+email,'Service: '+service,'','Details:',message||'(none provided)'].join('\n');
           form.style.display = 'none';
           done.style.display = 'flex';
-          window.location.href = 'mailto:rocexcleaning@gmail.com?cc=curtisawe@gmail.com&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+          // Background send via FormSubmit (no account needed): emails the
+          // request to RocEx, CCs Curtis, and auto-replies a thank-you to the
+          // customer. Fires silently; the confirmation card is already shown.
+          fetch('https://formsubmit.co/ajax/rocexcleaning@gmail.com', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({
+              name: name, phone: phone, email: email, service: service, details: message || '(none provided)',
+              _subject: 'New quote request — ' + name,
+              _cc: 'curtisawe@gmail.com',
+              _template: 'table',
+              _captcha: 'false',
+              _autoresponse: 'Hi ' + name + ',\n\nThanks for contacting RocEx Cleaning — we\'ve received your request and will get back to you within one business day with a quote.\n\nIf you need us sooner, call 585-733-8540.\n\n— The RocEx Cleaning Team'
+            })
+          }).catch(function(){});
         }, true);
         form.dataset.rxContactWired = '1';
       })();
