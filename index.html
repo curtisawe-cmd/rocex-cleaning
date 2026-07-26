@@ -402,7 +402,17 @@ document.addEventListener('DOMContentLoaded', async function() {
       // (post-render) to stack the hero and show the logo full-size on phones.
       if(!byId('rx-responsive-css') && document.querySelector('section[style*="1.1fr 1fr"]')){
         var mc = document.createElement('style'); mc.id = 'rx-responsive-css';
-        mc.textContent = '@media (max-width:760px){section[style*="1.1fr 1fr"]{grid-template-columns:1fr !important;gap:16px !important;}section[style*="1.1fr 1fr"] figure{height:300px !important;order:-1 !important;margin-bottom:8px !important;}}';
+        mc.textContent = '@media (max-width:760px){'
+          + 'html,body{overflow-x:hidden !important;max-width:100% !important;}'
+          + 'section[style*="1.1fr 1fr"]{grid-template-columns:1fr !important;gap:16px !important;}'          /* hero */
+          + 'section[style*="1.1fr 1fr"] figure{height:300px !important;order:-1 !important;margin-bottom:8px !important;}'
+          + '#pricing div[style*="repeat(3"]{grid-template-columns:1fr !important;}'                          /* pricing cards */
+          + '#estimate div[style*="1fr 1fr"]{grid-template-columns:1fr !important;}'                          /* map | form */
+          + '#contact{grid-template-columns:1fr !important;gap:26px !important;}'                             /* contact info | form */
+          + '.nav{gap:12px !important;flex-wrap:wrap;}'
+          + '.nav .btn-primary{white-space:nowrap;}'
+          + '.rx-carousel-scene{overflow:hidden !important;}'
+          + '}';
         document.head.appendChild(mc);
       }
       var section = byId('estimate');
@@ -641,7 +651,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         var scene = document.createElement('div'); scene.className = 'rx-carousel-scene';
         var stage = document.createElement('div'); stage.className = 'rx-carousel-stage';
-        var n = cards.length, radius = Math.round(130 / Math.tan(Math.PI / n)) + 34;
+        var n = cards.length;
+        // Responsive ring: smaller cards + radius on phones so the front card
+        // (magnified by perspective) fits the screen without clipping text.
+        var mobile = document.documentElement.clientWidth < 620;
+        var cardW = mobile ? 190 : 260, cardH = mobile ? 250 : 300;
+        var radius = Math.round((cardW / 2) / Math.tan(Math.PI / n)) + (mobile ? 20 : 34);
+        stage.style.width = cardW + 'px'; stage.style.height = cardH + 'px';
+        stage.style.marginLeft = (-cardW / 2) + 'px'; stage.style.marginTop = (-cardH / 2) + 'px';
+        scene.style.height = (mobile ? (cardH + 110) : 440) + 'px';
         cards.forEach(function(card, i){
           var clone = card.cloneNode(true);
           clone.removeAttribute('data-dc-tpl');
@@ -651,7 +669,9 @@ document.addEventListener('DOMContentLoaded', async function() {
           // geometry holds and the cards read against the blue background.
           clone.style.position = 'absolute';
           clone.style.left = '0'; clone.style.top = '0'; clone.style.margin = '0';
+          clone.style.width = cardW + 'px'; clone.style.height = cardH + 'px';
           clone.style.background = '#ffffff';
+          if(mobile) clone.style.padding = '20px 18px';
           clone.style.transform = 'rotateY(' + (i * (360 / n)) + 'deg) translateZ(' + radius + 'px)';
           stage.appendChild(clone);
         });
